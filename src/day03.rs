@@ -6,7 +6,7 @@ pub fn run(input: &String) {
 }
 
 fn part1(input: &String) {
-    let mul_re = Regex::new("mul\\((\\d+),(\\d+)\\)").unwrap();
+    let mul_re = Regex::new(r"mul\((\d+),(\d+)\)").unwrap();
     let mut sum = 0i32;
 
     for caps in mul_re.captures_iter(input) {
@@ -19,8 +19,8 @@ fn part1(input: &String) {
 }
 
 fn part2(input: &String) {
-    let top_re = Regex::new("(don't\\(\\)|do\\(\\)|mul\\(\\d+,\\d+\\))").unwrap();
-    let mul_re = Regex::new("mul\\((\\d+),(\\d+)\\)").unwrap();
+    let top_re = Regex::new(r"(don't\(\)|do\(\)|mul\(\d+,\d+\))").unwrap();
+    let mul_re = Regex::new(r"mul\((\d+),(\d+)\)").unwrap();
     let mut sum = 0i32;
     let mut ignore = false;
 
