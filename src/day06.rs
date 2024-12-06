@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::collections::HashSet;
 
 use crate::Coord;
@@ -5,11 +6,11 @@ use crate::Grid;
 
 pub fn run(lines: &Vec<String>) {
     let grid = Grid::from_lines(lines);
-    part1(&grid);
-    part2(&grid);
+    let part1_visited = part1(&grid);
+    part2(&grid, &part1_visited);
 }
 
-fn part1(grid: &Grid) {
+fn part1(grid: &Grid) -> HashSet<Coord> {
     let mut dir = Coord { row: -1, col: 0 }; // upward
     let mut visited: HashSet<Coord> = HashSet::new();
     let mut coord = grid.find("^").unwrap();
@@ -32,20 +33,20 @@ fn part1(grid: &Grid) {
     }
 
     println!("part 1: {}", visited.len());
+
+    visited
 }
 
-fn part2(grid: &Grid) {
+fn part2(grid: &Grid, part1_visited: &HashSet<Coord>) {
     let start_coord = grid.find("^").unwrap();
     let empty = String::from(".");
     let start = String::from("^");
     let obstruction = String::from("#");
 
-    let mut loops = 0usize;
-
-    for row in 0..grid.nrows {
-        for col in 0..grid.ncols {
-            let new_obstruction = Coord::new(row, col);
-
+    let loop_count: usize = part1_visited
+        .par_iter()
+        .map(|new_obstruction| {
+            let mut loops = 0usize;
             let mut coord = start_coord.clone();
             let mut dir = Coord { row: -1, col: 0 }; // upward
             let mut visited: HashSet<(Coord, Coord)> = HashSet::new();
@@ -61,7 +62,7 @@ fn part2(grid: &Grid) {
                 let next_coord = coord.add(&dir, 1);
 
                 match grid.coords.get(&next_coord) {
-                    Some(s) if s == &obstruction || next_coord == new_obstruction => {
+                    Some(s) if s == &obstruction || &next_coord == new_obstruction => {
                         dir = right(&dir);
                     }
                     Some(s) if s == &empty || s == &start => {
@@ -70,10 +71,11 @@ fn part2(grid: &Grid) {
                     _ => break 'find_loop,
                 }
             }
-        }
-    }
+            loops
+        })
+        .sum();
 
-    println!("part 2: {}", loops);
+    println!("part 2: {}", loop_count);
 }
 
 fn right(coord: &Coord) -> Coord {
