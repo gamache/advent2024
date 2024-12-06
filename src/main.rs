@@ -10,13 +10,13 @@ fn read_lines(filename: &str) -> Vec<String> {
         .collect()
 }
 
-mod day05;
+mod day06;
 
 fn main() {
-    day05::run(&read_to_string("inputs/day05.txt").unwrap());
+    day06::run(&read_lines("inputs/day06.txt"));
 }
 
-#[derive(Hash, PartialEq, Eq, Debug)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone)]
 pub struct Coord {
     pub row: i32,
     pub col: i32,
@@ -62,5 +62,43 @@ impl Grid {
             }
             println!("");
         }
+    }
+    pub fn from_lines(lines: &Vec<String>) -> Grid {
+        let nrows = lines.len();
+        let mut ncols = 0usize;
+
+        let mut coords: HashMap<Coord, String> = HashMap::new();
+        for row in 0..lines.len() {
+            // chars will have "" as its first and last elements -- ignore
+            let chars: Vec<&str> = lines[row].split("").collect();
+            ncols = chars.len() - 2;
+            for col in 0..ncols {
+                coords.insert(Coord::new(row, col), chars[col + 1].to_string());
+            }
+        }
+
+        Grid {
+            coords,
+            nrows,
+            ncols,
+        }
+    }
+
+    pub fn find(&self, str: &str) -> Option<Coord> {
+        let string = String::from(str);
+        for row in 0..self.nrows {
+            for col in 0..self.ncols {
+                let coord = Coord::new(row, col);
+                match self.coords.get(&coord) {
+                    Some(s) => {
+                        if s == &string {
+                            return Some(coord);
+                        }
+                    }
+                    _ => (),
+                }
+            }
+        }
+        None
     }
 }
