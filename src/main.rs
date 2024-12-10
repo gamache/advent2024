@@ -10,10 +10,10 @@ fn read_lines(filename: &str) -> Vec<String> {
         .collect()
 }
 
-mod day09;
+mod day10;
 
 fn main() {
-    day09::run(&read_to_string("inputs/day09.txt").unwrap());
+    day10::run(&read_lines("inputs/day10.txt"));
 }
 
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
@@ -100,5 +100,15 @@ impl Grid {
             }
         }
         None
+    }
+
+    pub fn all_coords(&self) -> Vec<Coord> {
+        let mut all_coords: Vec<Coord> = vec![];
+        for row in 0..self.nrows {
+            for col in 0..self.ncols {
+                all_coords.push(Coord::new(row, col));
+            }
+        }
+        all_coords
     }
 }
