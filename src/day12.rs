@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::Coord;
@@ -6,7 +5,31 @@ use crate::Grid;
 
 pub fn run(lines: &Vec<String>) {
     let grid = Grid::from_lines(lines);
-    part1(&grid);
+
+    let mut plots: Vec<Plot> = vec![];
+    let mut plotted_coords: HashSet<Coord> = HashSet::new();
+
+    for row in 0..grid.nrows {
+        for col in 0..grid.ncols {
+            let coord = Coord::new(row, col);
+            if !plotted_coords.contains(&coord) {
+                let plot = Plot::from_coord(&grid, &coord);
+                for c in &plot.coords {
+                    plotted_coords.insert(c.clone());
+                }
+                plots.push(plot);
+            }
+        }
+    }
+
+    let cost: usize = plots.iter().map(|plot| plot.area * plot.perimeter).sum();
+    println!("part 1: {}", cost);
+
+    let cost2: usize = plots
+        .iter()
+        .map(|plot| plot.area * plot.count_sides())
+        .sum();
+    println!("part 2: {}", cost2);
 }
 
 struct Plot {
@@ -65,26 +88,48 @@ impl Plot {
             coords: coords,
         }
     }
-}
 
-fn part1(grid: &Grid) {
-    let mut plots: Vec<Plot> = vec![];
-    let mut plotted_coords: HashSet<Coord> = HashSet::new();
+    pub fn count_sides(&self) -> usize {
+        /*
+          Left and right sides, we detect the topmost segment.
+          Top and bottom sides, we detect the leftmost segment.
+        */
+        let mut sides = 0usize;
 
-    for row in 0..grid.nrows {
-        for col in 0..grid.ncols {
-            let coord = Coord::new(row, col);
-            if !plotted_coords.contains(&coord) {
-                let plot = Plot::from_coord(grid, &coord);
-                for c in &plot.coords {
-                    plotted_coords.insert(c.clone());
-                }
-                plots.push(plot);
+        for coord in &self.coords {
+            // topmost left
+            if self.coords.get(&coord.left()) == None
+                && (self.coords.get(&coord.up()) == None
+                    || self.coords.get(&coord.up().left()) != None)
+            {
+                sides += 1;
+            }
+
+            // topmost right
+            if self.coords.get(&coord.right()) == None
+                && (self.coords.get(&coord.up()) == None
+                    || self.coords.get(&coord.up().right()) != None)
+            {
+                sides += 1;
+            }
+
+            // leftmost top
+            if self.coords.get(&coord.up()) == None
+                && (self.coords.get(&coord.left()) == None
+                    || self.coords.get(&coord.left().up()) != None)
+            {
+                sides += 1;
+            }
+
+            // leftmost bottom
+            if self.coords.get(&coord.down()) == None
+                && (self.coords.get(&coord.left()) == None
+                    || self.coords.get(&coord.left().down()) != None)
+            {
+                sides += 1;
             }
         }
+
+        sides
     }
-
-    let cost: usize = plots.iter().map(|plot| plot.area * plot.perimeter).sum();
-
-    println!("part 1: {}", cost);
 }
