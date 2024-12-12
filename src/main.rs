@@ -10,10 +10,10 @@ fn read_lines(filename: &str) -> Vec<String> {
         .collect()
 }
 
-mod day11;
+mod day12;
 
 fn main() {
-    day11::run(&read_to_string("inputs/day11.txt").unwrap());
+    day12::run(&read_lines("inputs/day12.txt"));
 }
 
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
@@ -46,6 +46,31 @@ impl Coord {
             }
         }
         dirs
+    }
+
+    pub fn up(&self) -> Coord {
+        Coord {
+            row: self.row - 1,
+            col: self.col,
+        }
+    }
+    pub fn down(&self) -> Coord {
+        Coord {
+            row: self.row + 1,
+            col: self.col,
+        }
+    }
+    pub fn left(&self) -> Coord {
+        Coord {
+            row: self.row,
+            col: self.col - 1,
+        }
+    }
+    pub fn right(&self) -> Coord {
+        Coord {
+            row: self.row,
+            col: self.col + 1,
+        }
     }
 }
 
