@@ -10,10 +10,10 @@ fn read_lines(filename: &str) -> Vec<String> {
         .collect()
 }
 
-mod day12;
+mod day13;
 
 fn main() {
-    day12::run(&read_lines("inputs/day12.txt"));
+    day13::run(&read_to_string("inputs/day13.txt").unwrap());
 }
 
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
