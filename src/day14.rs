@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::Coord;
 use crate::Grid;
+use rayon::prelude::*;
 use regex::Regex;
 
 #[derive(Debug, Clone)]
@@ -74,57 +75,104 @@ fn part1(robots: &Vec<Robot>) {
 }
 
 fn part2(robots: &Vec<Robot>) {
-    /*
-        let width = 101;
-        let height = 103;
-        let mut moved_robots = robots.clone();
+    let width = 101;
+    let height = 103;
+    let mut moved_robots = robots.clone();
+    let mut h = 0;
+    let mut hmod = 0;
+    let mut v = 0;
+    let mut vmod = 0;
 
-        for i in 1..10001 {
-            let mut grid = Grid {
-                coords: HashMap::new(),
-                nrows: height as usize,
-                ncols: width as usize,
-            };
-            moved_robots = moved_robots
-                .iter()
-                .map(|robot| robot.go(1, width, height))
-                .collect();
-            for r in &moved_robots {
-                grid.coords.insert(
-                    Coord {
-                        row: r.y as i32,
-                        col: r.x as i32,
-                    },
-                    String::from("X"),
-                );
-            }
-            println!("\nafter {} seconds:", i);
-            grid.print();
-        }
-
-
-        Look through the above output, and notice two things:
-        * there's vertical alignment at t=12, and every 103 afterwards
-        * there's horizontal alignment at t=35, and every 101 afterwards
-        So t mod 103 = 12, and t mod 101 = 35. Chinese Remainder Theorem
-        would work, but a brute force search is easier.
-    */
-
-    let mut a = 12;
-    let mut b = 35;
+    // Find instances of horizontal or vertical alignment, and their recurrence periods
+    let mut i = 0;
     loop {
-        if a < b {
-            a += 103;
+        i += 1;
+
+        moved_robots = moved_robots
+            .par_iter()
+            .map(|robot| robot.go(1, width, height))
+            .collect();
+
+        let mut grid = Grid {
+            coords: HashMap::new(),
+            nrows: height as usize,
+            ncols: width as usize,
+        };
+        for robot in &moved_robots {
+            grid.coords.insert(
+                Coord {
+                    row: robot.y as i32,
+                    col: robot.x as i32,
+                },
+                String::from("X"),
+            );
         }
-        if a == b {
-            break;
+
+        if has_horiz_alignment(&grid) {
+            if h > 0 {
+                hmod = i - h;
+            } else {
+                h = i;
+            }
         }
-        if a > b {
-            b += 101;
+        if has_vert_alignment(&grid) {
+            if v > 0 {
+                vmod = i - v;
+            } else {
+                v = i;
+            }
         }
-        if a == b {
+        if hmod > 0 && vmod > 0 {
             break;
         }
     }
-    println!("part 2: {}", a);
+
+    // t % hmod == h, and t % vmod == v. Find t.
+    loop {
+        if h < v {
+            h += hmod;
+        }
+        if h == v {
+            break;
+        }
+        if h > v {
+            v += vmod;
+        }
+        if h == v {
+            break;
+        }
+    }
+    println!("part 2: {}", h);
+}
+
+// checks if there is a row filled to 20% or more
+fn has_horiz_alignment(grid: &Grid) -> bool {
+    for row in 0..grid.nrows {
+        let mut count = 0usize;
+        for col in 0..grid.ncols {
+            if grid.coords.get(&Coord::new(row, col)) != None {
+                count += 1;
+            }
+        }
+        if count * 5 >= grid.ncols {
+            return true;
+        }
+    }
+    false
+}
+
+// checks if there is a column filled to 20% or more
+fn has_vert_alignment(grid: &Grid) -> bool {
+    for col in 0..grid.ncols {
+        let mut count = 0usize;
+        for row in 0..grid.nrows {
+            if grid.coords.get(&Coord::new(row, col)) != None {
+                count += 1;
+            }
+        }
+        if count * 5 >= grid.nrows {
+            return true;
+        }
+    }
+    false
 }
