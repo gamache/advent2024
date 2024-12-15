@@ -10,13 +10,13 @@ fn read_lines(filename: &str) -> Vec<String> {
         .collect()
 }
 
-mod day14;
+mod day15;
 
 fn main() {
-    day14::run(&read_lines("inputs/day14.txt"));
+    day15::run(&read_to_string("inputs/day15.txt").unwrap());
 }
 
-#[derive(Hash, PartialEq, Eq, Debug, Clone)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Coord {
     pub row: i32,
     pub col: i32,
@@ -74,6 +74,7 @@ impl Coord {
     }
 }
 
+#[derive(Clone)]
 pub struct Grid {
     pub coords: HashMap<Coord, String>,
     pub nrows: usize,
