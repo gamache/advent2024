@@ -89,7 +89,7 @@ impl Grid {
                     None => print!(" "),
                 }
             }
-            println!("");
+            println!();
         }
     }
     pub fn from_lines(lines: &Vec<String>) -> Grid {

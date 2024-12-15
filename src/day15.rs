@@ -5,7 +5,7 @@ use crate::Grid;
 
 pub fn run(input: &String) {
     let (grid_str, directions_str) = input.trim().split_once("\n\n").unwrap();
-    let grid_lines: Vec<String> = grid_str.split("\n").map(|s| s.to_string()).collect();
+    let grid_lines: Vec<String> = grid_str.split('\n').map(|s| s.to_string()).collect();
     let directions: Vec<Coord> = directions_str
         .trim()
         .chars()
@@ -43,24 +43,24 @@ fn part1(g: &Grid, directions: &Vec<Coord>) {
 }
 
 fn go1(grid: &mut Grid, start: &Coord, direction: &Coord) -> Coord {
-    let mut coord = start.clone();
+    let mut coord = *start;
     loop {
         coord = coord.add(direction, 1);
         match grid.coords.get(&coord) {
             Some(s) if s == &String::from("O") => continue,
             Some(s) if s == &String::from(".") => break,
-            _ => return start.clone(),
+            _ => return *start,
         }
     }
     loop {
         if &coord == start {
-            grid.coords.insert(coord.clone(), String::from("."));
+            grid.coords.insert(coord, String::from("."));
             return coord.add(direction, 1);
         }
 
         let prev = coord.add(direction, -1);
         grid.coords
-            .insert(coord.clone(), grid.coords[&prev].clone());
+            .insert(coord, grid.coords[&prev].clone());
         coord = prev;
     }
 }
@@ -165,7 +165,7 @@ fn move_box(grid: &mut Grid, leftside: &Coord, direction: &Coord) {
                 move_box(grid, &leftside.left().left(), direction);
             }
             grid.coords.insert(leftside.left(), String::from("["));
-            grid.coords.insert(leftside.clone(), String::from("]"));
+            grid.coords.insert(*leftside, String::from("]"));
         }
         &Coord { row: 0, col: 1 } => {
             if grid.coords.get(&leftside.right().right()) == Some(&String::from("[")) {
@@ -193,7 +193,7 @@ fn move_box(grid: &mut Grid, leftside: &Coord, direction: &Coord) {
             grid.coords.insert(next_left, String::from("["));
             grid.coords.insert(next_right, String::from("]"));
 
-            grid.coords.insert(leftside.clone(), String::from("."));
+            grid.coords.insert(*leftside, String::from("."));
             grid.coords.insert(leftside.right(), String::from("."));
         }
     }
@@ -205,26 +205,26 @@ fn go2(grid: &mut Grid, start: &Coord, direction: &Coord) -> Coord {
         Some(s) if s == &String::from("[") => {
             if can_box_move(grid, &next, direction) {
                 move_box(grid, &next, direction);
-                grid.coords.insert(next.clone(), String::from("@"));
-                grid.coords.insert(start.clone(), String::from("."));
+                grid.coords.insert(next, String::from("@"));
+                grid.coords.insert(*start, String::from("."));
                 return next;
             }
         }
         Some(s) if s == &String::from("]") => {
             if can_box_move(grid, &next.left(), direction) {
                 move_box(grid, &next.left(), direction);
-                grid.coords.insert(next.clone(), String::from("@"));
-                grid.coords.insert(start.clone(), String::from("."));
+                grid.coords.insert(next, String::from("@"));
+                grid.coords.insert(*start, String::from("."));
                 return next;
             }
         }
         Some(s) if s == &String::from(".") => {
-            grid.coords.insert(next.clone(), String::from("@"));
-            grid.coords.insert(start.clone(), String::from("."));
+            grid.coords.insert(next, String::from("@"));
+            grid.coords.insert(*start, String::from("."));
             return next;
         }
         _ => (),
     }
 
-    start.clone()
+    *start
 }
