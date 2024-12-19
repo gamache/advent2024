@@ -1,12 +1,25 @@
+use rayon::prelude::*;
 use regex::Regex;
 
 pub fn run(input: &str) {
-    let mut cpu = CPU::from_input(input);
-    cpu.run();
-    println!("part 1: {}", cpu.output_string());
+    let cpu = CPU::from_input(input);
+    let mut cpu1 = cpu.clone();
+    cpu1.run();
+    println!("part 1: {}", cpu1.output_string());
+
+    (1..25).for_each(|a| {
+        let mut cpu2 = cpu.clone();
+        cpu2.a = a;
+        cpu2.run();
+        println!("{} {:?}", a, cpu2);
+        if cpu2.program == cpu2.output {
+            println!("part 2: {}", a);
+            return;
+        }
+    });
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct CPU {
     pub program: Vec<u64>,
     pub ip: usize,
@@ -87,10 +100,10 @@ impl CPU {
     }
 
     pub fn run(&mut self) {
-        println!("{:?}", self);
+        // println!("{:?}", self);
         while !self.halt {
             self.tick();
-            println!("{:?}", self);
+            // println!("{:?}", self);
         }
     }
 
@@ -99,25 +112,25 @@ impl CPU {
             0 => {
                 // adv
                 let v = self.fetch();
-                println!("adv {}", v);
+                // println!("adv {}", (1 << self.combo(v)));
                 self.a = self.a / (1 << self.combo(v));
             }
             1 => {
                 // bxl
                 let v = self.fetch();
-                println!("bxl {}", v);
+                // println!("bxl {}", v);
                 self.b = self.b ^ v;
             }
             2 => {
                 // bst
                 let v = self.fetch();
-                println!("bst {}", v);
+                // println!("bst {}", self.combo(v) % 8);
                 self.b = self.combo(v) % 8;
             }
             3 => {
                 // jnz
                 let v = self.fetch();
-                println!("jnz {}", v);
+                // println!("jnz {}", v);
                 if self.a != 0 {
                     self.ip = v as usize;
                 }
@@ -125,26 +138,26 @@ impl CPU {
             4 => {
                 // bxc
                 let v = self.fetch();
-                println!("bxc {}", v);
+                // println!("bxc {}", v);
                 self.b = self.b ^ self.c;
             }
             5 => {
                 // out
                 let v = self.fetch();
-                println!("out {}", v);
+                // println!("out {}", self.combo(v) % 8);
                 self.output.push(self.combo(v) % 8);
             }
             6 => {
                 // bdv
                 let v = self.fetch();
-                println!("bdv {}", v);
-                self.b = self.b / (1 << self.combo(v));
+                // println!("bdv {}", (1 << self.combo(v)));
+                self.b = self.a / (1 << self.combo(v));
             }
             7 => {
                 // cdv
                 let v = self.fetch();
-                println!("cdv {}", v);
-                self.c = self.c / (1 << self.combo(v));
+                // println!("cdv {}", (1 << self.combo(v)));
+                self.c = self.a / (1 << self.combo(v));
             }
             x => panic!("bad opcode {}", x),
         }
