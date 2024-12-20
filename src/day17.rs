@@ -7,15 +7,14 @@ pub fn run(input: &str) {
     cpu1.run();
     println!("part 1: {}", cpu1.output_string());
 
-    (1..25).for_each(|a| {
-        let mut cpu2 = cpu.clone();
-        cpu2.a = a;
-        cpu2.run();
-        println!("{} {:?}", a, cpu2);
-        if cpu2.program == cpu2.output {
-            println!("part 2: {}", a);
-            return;
-        }
+    (0..8).for_each(|a| {
+        (0..8).for_each(|c| {
+            let mut cpu2 = cpu.clone();
+            cpu2.a = a;
+            cpu2.c = c;
+            cpu2.run();
+            println!("a={} c={} {:?}", a, c, cpu2);
+        });
     });
 }
 
