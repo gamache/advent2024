@@ -13,9 +13,15 @@ fn read_lines(filename: &str) -> Vec<String> {
 mod day17;
 mod day18;
 mod day19;
+mod day20;
+
 fn main() {
-    day19::run(&read_to_string("inputs/test19.txt").unwrap());
-    day19::run(&read_to_string("inputs/day19.txt").unwrap());
+    day20::run(&read_lines("inputs/test20.txt"));
+    day20::run(&read_lines("inputs/day20.txt"));
+
+    // day19::run(&read_to_string("inputs/test19.txt").unwrap());
+    // day19::run(&read_to_string("inputs/day19.txt").unwrap());
+
     // day18::run(&read_lines("inputs/test18.txt"));
     // day18::run(&read_lines("inputs/day18.txt"));
 
@@ -46,6 +52,10 @@ impl Coord {
             row: self.row + (coord.row * times),
             col: self.col + (coord.col * times),
         }
+    }
+
+    pub fn distance(&self, other: &Coord) -> usize {
+        ((self.row - other.row).abs() + (self.col - other.col).abs()) as usize
     }
 
     pub fn directions() -> Vec<Coord> {
@@ -118,6 +128,18 @@ impl Grid {
             println!();
         }
     }
+
+    pub fn print_path(&self, path: &Vec<Coord>) {
+        let mut grid = self.clone();
+        let mut i = 0;
+        for coord in path {
+            i += 1;
+            grid.coords
+                .insert(coord.clone(), String::from((i % 10).to_string()));
+        }
+        grid.print();
+    }
+
     pub fn from_lines(lines: &Vec<String>) -> Grid {
         let nrows = lines.len();
         let mut ncols = 0usize;
