@@ -17,7 +17,7 @@ mod day20;
 
 fn main() {
     day20::run(&read_lines("inputs/test20.txt"));
-    day20::run(&read_lines("inputs/day20.txt"));
+    // day20::run(&read_lines("inputs/day20.txt"));
 
     // day19::run(&read_to_string("inputs/test19.txt").unwrap());
     // day19::run(&read_to_string("inputs/day19.txt").unwrap());
