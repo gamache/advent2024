@@ -16,10 +16,14 @@ mod day19;
 mod day20;
 mod day21;
 mod day22;
+mod day23;
 
 fn main() {
-    day22::run(&read_lines("inputs/test22.txt"));
-    day22::run(&read_lines("inputs/day22.txt"));
+    // day23::run(&read_lines("inputs/test23.txt"));
+    day23::run(&read_lines("inputs/day23.txt"));
+
+    // day22::run(&read_lines("inputs/test22.txt"));
+    // day22::run(&read_lines("inputs/day22.txt"));
 
     // day21::run(&read_lines("inputs/test21.txt"));
     // day21::run(&read_lines("inputs/day21.txt"));
