@@ -94,6 +94,38 @@ fn keypad_move(from: char, to: char) -> Vec<char> {
 }
 
 fn dpad_move(from: char, to: char) -> Vec<char> {
+    match (from, to) {
+        ('A', '^') => vec!['<'],
+        ('A', 'v') => vec!['<', 'v'], // or v<
+        ('A', '<') => vec!['v', '<', '<'],
+        ('A', '>') => vec!['v'],
+
+        ('^', 'A') => vec!['>'],
+        ('^', 'v') => vec!['v'],
+        ('^', '<') => vec!['v', '<'],
+        ('^', '>') => vec!['v', '>'], // or >v
+
+        ('v', 'A') => vec!['^', '>'], // or >^
+        ('v', '^') => vec!['^'],
+        ('v', '<') => vec!['<'],
+        ('v', '>') => vec!['>'],
+
+        ('<', 'A') => vec!['>', '>', '^'],
+        ('<', '^') => vec!['>', '^'],
+        ('<', 'v') => vec!['>'],
+        ('<', '>') => vec!['>', '>'],
+
+        ('>', 'A') => vec!['^'],
+        ('>', '^') => vec!['<', '^'], // or ^<
+        ('>', 'v') => vec!['<'],
+        ('>', '<') => vec!['<', '<'],
+
+        (c1, c2) if c1 == c2 => vec![],
+        x => panic!("{:?}", x),
+    }
+}
+
+fn dpad_move_old(from: char, to: char) -> Vec<char> {
     let mut coords: HashMap<char, Coord> = HashMap::new();
     coords.insert('^', Coord { row: 0, col: 1 });
     coords.insert('A', Coord { row: 0, col: 2 });
