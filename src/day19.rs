@@ -1,6 +1,6 @@
 use std::{
     cmp::Ordering,
-    collections::{BinaryHeap, HashSet},
+    collections::{BinaryHeap, HashMap, HashSet},
 };
 
 use rayon::prelude::*;
@@ -16,12 +16,15 @@ pub fn run(input: &str) {
     }
     let available = avail_builder.build();
 
-    let solutions: Vec<Vec<String>> = desired
+    let mut memo: HashMap<String, usize> = HashMap::new();
+    let solutions: Vec<usize> = desired
         .iter()
-        .flat_map(|&d| solve(&String::from(d), &available))
+        .map(|&d| solution_count(&String::from(d), &available, &mut memo))
+        .filter(|c| *c > 0)
         .collect();
 
     println!("part 1: {}", solutions.len());
+    println!("part 2: {}", solutions.iter().sum::<usize>());
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -41,40 +44,20 @@ impl PartialOrd for Solution {
     }
 }
 
-fn solve(desired: &str, available: &Trie<u8>) -> Option<Vec<String>> {
-    let start = Solution {
-        prefix: vec![],
-        suffix: String::from(desired),
-        len: 0,
-    };
-    let mut heap = BinaryHeap::new();
-    heap.push(start);
-    let mut visited: HashSet<String> = HashSet::new();
-
-    while let Some(s) = heap.pop() {
-        // println!("{:?}", s);
-        let joined_prefix = s.prefix.join("");
-        if joined_prefix == desired {
-            return Some(s.prefix);
-        }
-        if visited.contains(&joined_prefix) || joined_prefix.len() > desired.len() {
-            continue;
-        }
-        visited.insert(joined_prefix.clone());
-
-        let prefixes: Vec<String> = available.common_prefix_search(&s.suffix).collect();
-        for prefix in prefixes {
-            let mut next_prefix = s.prefix.clone();
-            next_prefix.push(prefix.clone());
-            let suffix = String::from(&s.suffix[prefix.len()..]);
-            let len: usize = next_prefix.iter().map(|p| p.len()).sum();
-            heap.push(Solution {
-                prefix: next_prefix,
-                suffix,
-                len,
-            });
-        }
+fn solution_count(desired: &str, available: &Trie<u8>, memo: &mut HashMap<String, usize>) -> usize {
+    if desired == "" {
+        return 1;
+    }
+    if let Some(c) = memo.get(desired) {
+        return *c;
     }
 
-    None
+    let prefixes: Vec<String> = available.common_prefix_search(desired).collect();
+    let mut count = 0usize;
+    for prefix in prefixes {
+        let suffix = desired[(prefix.len())..].to_string();
+        count += solution_count(&suffix, available, memo);
+    }
+    memo.insert(desired.to_string(), count);
+    count
 }
