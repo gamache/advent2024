@@ -1,161 +1,62 @@
 use itertools::Itertools;
-use rayon::prelude::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::Coord;
 pub fn run(lines: &Vec<String>) {
-    let mut memo: HashMap<(char, char), String> = HashMap::new();
-    // let dpad_chars = ['A', '^', 'v', '<', '>'];
-    // for from in &dpad_chars {
-    //     for to in &dpad_chars {
-    //         let moves = dpad_moves(*from, *to);
-    //         let mut dirs: Vec<String> = moves
-    //             .into_iter()
-    //             .flat_map(|m| {
-    //                 let mut s: String = m.iter().collect();
-    //                 if &s == "" {
-    //                     s = String::from("A");
-    //                 }
-    //                 let d = directions_to_directions(&s);
-    //                 println!("{} {} {} {:?}", from, to, s, d);
-    //                 d
-    //             })
-    //             .collect();
-    //         dirs.sort_by(|a, b| a.len().cmp(&b.len()));
-    //         memo.insert((*from, *to), dirs[0].clone());
-    //     }
-    // }
-    // println!("memo {:?}", memo);
-
-    //let dirs = keypad_to_directions("029A", &'A');
-    // println!("{:?}", dirs);
-    // println!("{}", shortest_directions("0", 2, &'A'));
-    // println!("{}", shortest_directions("2", 2, &'0'));
-    // println!("{}", shortest_directions("9", 2, &'2'));
-    // println!("{}", shortest_directions("A", 2, &'9'));
-    // println!("{}", shortest_directions("029A", 2, &'A'));
-    println!("part 1: {}", solve(lines, 2, &memo));
-    // println!("part 2: {}", solve(lines, 25));
+    println!("part 1: {}", solve(lines, 3));
+    println!("part 2: {}", solve(lines, 26));
 }
 
-fn solve(
-    lines: &Vec<String>,
-    robots_with_dpads: usize,
-    memo: &HashMap<(char, char), String>,
-) -> usize {
+fn solve(lines: &Vec<String>, robots_with_dpads: usize) -> usize {
+    let mut memo: HashMap<(char, char, usize), usize> = HashMap::new();
     lines
         .iter()
         .map(|line| {
-            let dirs = shortest_directions(line, robots_with_dpads, &'A', memo);
-            // println!("{}: {}", line, dirs);
+            let len = len_from(line, robots_with_dpads, &mut keypad_coords(), &mut memo);
             let num = line[0..(line.len() - 1)].parse::<usize>().unwrap();
-            dirs.len() * num
+            len * num
         })
         .sum()
 }
 
-fn shortest_directions(
-    keypad: &str,
+fn len_from(
+    line: &str,
     robots_with_dpads: usize,
-    from: &char,
-    memo: &HashMap<(char, char), String>,
-) -> String {
-    let mut dirs = keypad_to_directions(keypad, from);
-    // println!("{:?}", dirs);
-
-    for _ in 0..robots_with_dpads {
-        let d_set: HashSet<String> = dirs
-            .par_iter()
-            .flat_map(|s| directions_to_directions(s))
-            //.map(|s| directions_to_directions_memo(s, &memo))
-            .collect();
-        println!("{:?}", d_set);
-        dirs = d_set.into_iter().collect();
-        let min_len = dirs.iter().map(|d| d.len()).min().unwrap();
-        dirs = dirs.into_iter().filter(|d| d.len() == min_len).collect();
+    coords: &HashMap<char, Coord>,
+    memo: &mut HashMap<(char, char, usize), usize>,
+) -> usize {
+    if robots_with_dpads == 0 {
+        return line.len();
     }
 
-    dirs.sort_by(|a, b| a.len().cmp(&b.len()));
-    dirs[0].clone()
-}
-
-fn directions_to_directions_memo(dirs: &str, memo: &HashMap<(char, char), String>) -> String {
-    let mut pos = 'A';
-    let mut directions: Vec<String> = vec![];
-
-    for c in dirs.chars() {
-        directions.push(memo.get(&(pos, c)).unwrap().clone());
-        pos = c;
-    }
-
-    directions.join("")
-}
-
-fn keypad_to_directions(keypad: &str, from: &char) -> Vec<String> {
-    let mut pos = *from;
-    let mut directions: Vec<Vec<Vec<char>>> = vec![];
-
-    for c in keypad.chars() {
-        let mut moves = keypad_moves(pos, c);
-        for i in 0..moves.len() {
-            moves[i].push('A');
-        }
-        directions.push(moves);
-        pos = c;
-    }
-    // println!("{:?}", directions);
-
-    let mut exploded_dirs: Vec<Vec<char>> = vec![vec![]];
-    for ds in directions {
-        let mut xds: Vec<Vec<char>> = vec![];
-        for d in ds {
-            for xd in &exploded_dirs {
-                let mut xdc = xd.clone();
-                // println!("{:?}", xdc);
-                xdc.extend(d.clone());
-                xds.push(xdc);
+    let mut from = 'A';
+    let mut len = 0;
+    for to in line.chars() {
+        match memo.get(&(from, to, robots_with_dpads)) {
+            Some(l) => len += l,
+            None => {
+                let moves = get_moves(coords, from, to);
+                let mut min: Option<usize> = None;
+                for m in moves {
+                    let mut mm = m.clone();
+                    mm.push('A');
+                    let mstr: String = mm.iter().collect();
+                    let len = len_from(&mstr, robots_with_dpads - 1, &dpad_coords(), memo);
+                    match min {
+                        Some(l) if l <= len => (),
+                        _ => min = Some(len),
+                    }
+                }
+                memo.insert((from, to, robots_with_dpads), min.unwrap());
+                len += min.unwrap();
             }
-        }
-        exploded_dirs = xds;
+        };
+        from = to;
     }
-    // println!("exploded_dirs {:?}", exploded_dirs);
-
-    exploded_dirs.iter().map(|xd| xd.iter().collect()).collect()
+    len
 }
 
-fn directions_to_directions(dir: &str) -> Vec<String> {
-    let mut pos = 'A';
-    let mut directions: Vec<Vec<Vec<char>>> = vec![];
-
-    for c in dir.chars() {
-        let mut moves = dpad_moves(pos, c);
-        for i in 0..moves.len() {
-            moves[i].push('A');
-        }
-        directions.push(moves);
-        pos = c;
-    }
-    // println!("directions {:?}", directions);
-
-    let mut exploded_dirs: Vec<Vec<char>> = vec![vec![]];
-    for ds in directions {
-        let mut xds: Vec<Vec<char>> = vec![];
-        for d in ds {
-            for xd in &exploded_dirs {
-                let mut xdc = xd.clone();
-                // println!("{:?}", xdc);
-                xdc.extend(d.clone());
-                xds.push(xdc);
-            }
-        }
-        exploded_dirs = xds;
-    }
-    // println!("exploded_dirs {:?}", exploded_dirs);
-
-    exploded_dirs.iter().map(|xd| xd.iter().collect()).collect()
-}
-
-fn keypad_moves(from: char, to: char) -> Vec<Vec<char>> {
+fn keypad_coords() -> HashMap<char, Coord> {
     let mut coords: HashMap<char, Coord> = HashMap::new();
     coords.insert('7', Coord { row: 0, col: 0 });
     coords.insert('8', Coord { row: 0, col: 1 });
@@ -166,22 +67,24 @@ fn keypad_moves(from: char, to: char) -> Vec<Vec<char>> {
     coords.insert('1', Coord { row: 2, col: 0 });
     coords.insert('2', Coord { row: 2, col: 1 });
     coords.insert('3', Coord { row: 2, col: 2 });
+    coords.insert('X', Coord { row: 3, col: 0 });
     coords.insert('0', Coord { row: 3, col: 1 });
     coords.insert('A', Coord { row: 3, col: 2 });
-    get_moves(&coords, from, to, Coord { row: 3, col: 0 })
+    coords
 }
 
-fn dpad_moves(from: char, to: char) -> Vec<Vec<char>> {
+fn dpad_coords() -> HashMap<char, Coord> {
     let mut coords: HashMap<char, Coord> = HashMap::new();
+    coords.insert('X', Coord { row: 0, col: 0 });
     coords.insert('^', Coord { row: 0, col: 1 });
     coords.insert('A', Coord { row: 0, col: 2 });
     coords.insert('<', Coord { row: 1, col: 0 });
     coords.insert('v', Coord { row: 1, col: 1 });
     coords.insert('>', Coord { row: 1, col: 2 });
-    get_moves(&coords, from, to, Coord { row: 0, col: 0 })
+    coords
 }
 
-fn get_moves(coords: &HashMap<char, Coord>, from: char, to: char, bad: Coord) -> Vec<Vec<char>> {
+fn get_moves(coords: &HashMap<char, Coord>, from: char, to: char) -> Vec<Vec<char>> {
     let mut moves: Vec<char> = vec![];
     let from_coord = coords[&from];
     let to_coord = coords[&to];
@@ -221,7 +124,7 @@ fn get_moves(coords: &HashMap<char, Coord>, from: char, to: char, bad: Coord) ->
                     '>' => coord.col += 1,
                     _ => panic!("shit"),
                 };
-                if coord == bad {
+                if coords[&'X'] == coord {
                     allowed = false;
                     break;
                 }
