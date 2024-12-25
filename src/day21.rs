@@ -1,5 +1,6 @@
+use itertools::Itertools;
 use rayon::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::Coord;
 pub fn run(lines: &Vec<String>) {
@@ -17,28 +18,51 @@ pub fn run(lines: &Vec<String>) {
 
 fn shortest_directions(keypad: &str) -> String {
     let d1 = keypad_to_directions(keypad);
-    let d2 = directions_to_directions(&d1, true);
-    let d3 = directions_to_directions(&d2, true);
-    println!("{}", keypad);
-    println!("{}", d1);
-    println!("{}", d2);
-    println!("{}", d3);
-    d3
+
+    let d2_set: HashSet<String> = d1
+        .par_iter()
+        .flat_map(|s| directions_to_directions(s))
+        .collect();
+
+    let d3_set: HashSet<String> = d2_set
+        .par_iter()
+        .flat_map(|s| directions_to_directions(s))
+        .collect();
+
+    let mut d3: Vec<String> = d3_set.into_iter().collect();
+    d3.sort_by(|a, b| a.len().cmp(&b.len()));
+    d3[0].clone()
 }
 
-fn keypad_to_directions(keypad: &str) -> String {
+fn keypad_to_directions(keypad: &str) -> Vec<String> {
     let mut pos = 'A';
-    let mut directions: Vec<char> = vec![];
+    let mut directions: Vec<Vec<Vec<char>>> = vec![];
 
     for c in keypad.chars() {
-        directions.extend(keypad_move(pos, c));
-        directions.push('A');
+        directions.push(keypad_move(pos, c));
+        directions.push(vec![vec!['A']]);
         pos = c;
     }
-    directions.iter().collect()
+
+    let mut exploded_dirs: Vec<Vec<char>> = vec![vec![]];
+    for ds in directions {
+        let mut xds: Vec<Vec<char>> = vec![];
+        for d in ds {
+            for xd in &exploded_dirs {
+                let mut xdc = xd.clone();
+                // println!("{:?}", xdc);
+                xdc.extend(d.clone());
+                xds.push(xdc);
+            }
+        }
+        exploded_dirs = xds;
+    }
+    // println!("exploded_dirs {:?}", exploded_dirs);
+
+    exploded_dirs.iter().map(|xd| xd.iter().collect()).collect()
 }
 
-fn directions_to_directions(dir: &str, optimize: bool) -> String {
+fn directions_to_directions(dir: &str) -> Vec<String> {
     let mut pos = 'A';
     let mut directions: Vec<Vec<Vec<char>>> = vec![];
 
@@ -64,18 +88,10 @@ fn directions_to_directions(dir: &str, optimize: bool) -> String {
     }
     // println!("exploded_dirs {:?}", exploded_dirs);
 
-    let mut dir_strs: Vec<String> = exploded_dirs.iter().map(|xd| xd.iter().collect()).collect();
-    if optimize {
-        dir_strs.sort_by(|a, b| {
-            directions_to_directions(a, false)
-                .len()
-                .cmp(&directions_to_directions(b, false).len())
-        });
-    }
-    dir_strs[0].clone()
+    exploded_dirs.iter().map(|xd| xd.iter().collect()).collect()
 }
 
-fn keypad_move(from: char, to: char) -> Vec<char> {
+fn keypad_move(from: char, to: char) -> Vec<Vec<char>> {
     let mut coords: HashMap<char, Coord> = HashMap::new();
     coords.insert('7', Coord { row: 0, col: 0 });
     coords.insert('8', Coord { row: 0, col: 1 });
@@ -95,13 +111,11 @@ fn keypad_move(from: char, to: char) -> Vec<char> {
     let to_coord = coords[&to];
 
     if to_coord.row < from_coord.row {
-        // up is always safe
         for _ in to_coord.row..from_coord.row {
             moves.push('^');
         }
     }
     if to_coord.col > from_coord.col {
-        // right is always safe
         for _ in from_coord.col..to_coord.col {
             moves.push('>');
         }
@@ -116,7 +130,30 @@ fn keypad_move(from: char, to: char) -> Vec<char> {
             moves.push('<');
         }
     }
+
     moves
+        .iter()
+        .permutations(moves.len())
+        .filter(|perm| {
+            let mut coord = from_coord;
+            let mut allowed = true;
+            for &c in perm {
+                match *c {
+                    '^' => coord.row -= 1,
+                    'v' => coord.row += 1,
+                    '<' => coord.col -= 1,
+                    '>' => coord.col += 1,
+                    _ => panic!("shit"),
+                };
+                if coord.row == 3 && coord.col == 0 {
+                    allowed = false;
+                    break;
+                }
+            }
+            allowed
+        })
+        .map(|v| v.iter().map(|&c| *c).collect::<Vec<char>>())
+        .collect()
 }
 
 fn dpad_move(from: char, to: char) -> Vec<Vec<char>> {

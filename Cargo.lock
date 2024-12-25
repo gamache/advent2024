@@ -6,6 +6,7 @@ version = 3
 name = "advent2024"
 version = "0.1.0"
 dependencies = [
+ "itertools",
  "lazy_static",
  "rayon",
  "regex",
@@ -59,6 +60,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6956a1e60e2d1412b44b4169d44a03dae518f8583d3e10090c912c105e48447"
 dependencies = [
  "rayon",
+]
+
+[[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
 ]
 
 [[package]]
