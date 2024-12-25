@@ -7,6 +7,7 @@ pub fn run(input: &str) {
     cpu1.run();
     println!("part 1: {}", cpu1.output_string());
 
+    /*
     (0..8).for_each(|a| {
         (0..8).for_each(|c| {
             let mut cpu2 = cpu.clone();
@@ -16,6 +17,14 @@ pub fn run(input: &str) {
             println!("a={} c={} {:?}", a, c, cpu2);
         });
     });
+     */
+
+    for a in 0..1000 {
+        let mut cpu2 = cpu.clone();
+        cpu2.a = a;
+        cpu2.run();
+        println!("{} {:?}", a, cpu2);
+    }
 }
 
 #[derive(Debug, Clone)]

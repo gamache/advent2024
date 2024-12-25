@@ -1,9 +1,10 @@
+use rayon::prelude::*;
 use std::collections::HashMap;
 
 use crate::Coord;
 pub fn run(lines: &Vec<String>) {
     let sum: usize = lines
-        .iter()
+        .par_iter()
         .map(|line| {
             let dirs = shortest_directions(line);
             println!("{}: {}", line, dirs);
@@ -16,8 +17,8 @@ pub fn run(lines: &Vec<String>) {
 
 fn shortest_directions(keypad: &str) -> String {
     let d1 = keypad_to_directions(keypad);
-    let d2 = directions_to_directions(&d1);
-    let d3 = directions_to_directions(&d2);
+    let d2 = directions_to_directions(&d1, true);
+    let d3 = directions_to_directions(&d2, true);
     println!("{}", keypad);
     println!("{}", d1);
     println!("{}", d2);
@@ -37,16 +38,41 @@ fn keypad_to_directions(keypad: &str) -> String {
     directions.iter().collect()
 }
 
-fn directions_to_directions(dir: &str) -> String {
+fn directions_to_directions(dir: &str, optimize: bool) -> String {
     let mut pos = 'A';
-    let mut directions: Vec<char> = vec![];
+    let mut directions: Vec<Vec<Vec<char>>> = vec![];
 
     for c in dir.chars() {
-        directions.extend(dpad_move(pos, c));
-        directions.push('A');
+        directions.push(dpad_move(pos, c));
+        directions.push(vec![vec!['A']]);
         pos = c;
     }
-    directions.iter().collect()
+    // println!("directions {:?}", directions);
+
+    let mut exploded_dirs: Vec<Vec<char>> = vec![vec![]];
+    for ds in directions {
+        let mut xds: Vec<Vec<char>> = vec![];
+        for d in ds {
+            for xd in &exploded_dirs {
+                let mut xdc = xd.clone();
+                // println!("{:?}", xdc);
+                xdc.extend(d.clone());
+                xds.push(xdc);
+            }
+        }
+        exploded_dirs = xds;
+    }
+    // println!("exploded_dirs {:?}", exploded_dirs);
+
+    let mut dir_strs: Vec<String> = exploded_dirs.iter().map(|xd| xd.iter().collect()).collect();
+    if optimize {
+        dir_strs.sort_by(|a, b| {
+            directions_to_directions(a, false)
+                .len()
+                .cmp(&directions_to_directions(b, false).len())
+        });
+    }
+    dir_strs[0].clone()
 }
 
 fn keypad_move(from: char, to: char) -> Vec<char> {
@@ -93,34 +119,34 @@ fn keypad_move(from: char, to: char) -> Vec<char> {
     moves
 }
 
-fn dpad_move(from: char, to: char) -> Vec<char> {
+fn dpad_move(from: char, to: char) -> Vec<Vec<char>> {
     match (from, to) {
-        ('A', '^') => vec!['<'],
-        ('A', 'v') => vec!['<', 'v'], // or v<
-        ('A', '<') => vec!['v', '<', '<'],
-        ('A', '>') => vec!['v'],
+        ('A', '^') => vec![vec!['<']],
+        ('A', 'v') => vec![vec!['<', 'v'], vec!['v', '<']],
+        ('A', '<') => vec![vec!['v', '<', '<']],
+        ('A', '>') => vec![vec!['v']],
 
-        ('^', 'A') => vec!['>'],
-        ('^', 'v') => vec!['v'],
-        ('^', '<') => vec!['v', '<'],
-        ('^', '>') => vec!['v', '>'], // or >v
+        ('^', 'A') => vec![vec!['>']],
+        ('^', 'v') => vec![vec!['v']],
+        ('^', '<') => vec![vec!['v', '<']],
+        ('^', '>') => vec![vec!['v', '>'], vec!['>', 'v']],
 
-        ('v', 'A') => vec!['^', '>'], // or >^
-        ('v', '^') => vec!['^'],
-        ('v', '<') => vec!['<'],
-        ('v', '>') => vec!['>'],
+        ('v', 'A') => vec![vec!['^', '>'], vec!['>', '^']],
+        ('v', '^') => vec![vec!['^']],
+        ('v', '<') => vec![vec!['<']],
+        ('v', '>') => vec![vec!['>']],
 
-        ('<', 'A') => vec!['>', '>', '^'],
-        ('<', '^') => vec!['>', '^'],
-        ('<', 'v') => vec!['>'],
-        ('<', '>') => vec!['>', '>'],
+        ('<', 'A') => vec![vec!['>', '>', '^']],
+        ('<', '^') => vec![vec!['>', '^']],
+        ('<', 'v') => vec![vec!['>']],
+        ('<', '>') => vec![vec!['>', '>']],
 
-        ('>', 'A') => vec!['^'],
-        ('>', '^') => vec!['<', '^'], // or ^<
-        ('>', 'v') => vec!['<'],
-        ('>', '<') => vec!['<', '<'],
+        ('>', 'A') => vec![vec!['^']],
+        ('>', '^') => vec![vec!['<', '^'], vec!['^', '<']],
+        ('>', 'v') => vec![vec!['<']],
+        ('>', '<') => vec![vec!['<', '<']],
 
-        (c1, c2) if c1 == c2 => vec![],
+        (c1, c2) if c1 == c2 => vec![vec![]],
         x => panic!("{:?}", x),
     }
 }

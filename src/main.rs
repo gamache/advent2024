@@ -21,7 +21,7 @@ mod day24;
 
 fn main() {
     // day24::run(&read_to_string("inputs/test24.txt").unwrap());
-    day24::run(&read_to_string("inputs/day24.txt").unwrap());
+    // day24::run(&read_to_string("inputs/day24.txt").unwrap());
 
     // day23::run(&read_lines("inputs/test23.txt"));
     // day23::run(&read_lines("inputs/day23.txt"));
@@ -29,8 +29,8 @@ fn main() {
     // day22::run(&read_lines("inputs/test22.txt"));
     // day22::run(&read_lines("inputs/day22.txt"));
 
-    // day21::run(&read_lines("inputs/test21.txt"));
-    // day21::run(&read_lines("inputs/day21.txt"));
+    day21::run(&read_lines("inputs/test21.txt"));
+    day21::run(&read_lines("inputs/day21.txt"));
 
     // day20::run(&read_lines("inputs/test20.txt"));
     // day20::run(&read_lines("inputs/day20.txt"));
