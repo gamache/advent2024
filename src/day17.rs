@@ -7,23 +7,46 @@ pub fn run(input: &str) {
     cpu1.run();
     println!("part 1: {}", cpu1.output_string());
 
-    /*
-    (0..8).for_each(|a| {
-        (0..8).for_each(|c| {
-            let mut cpu2 = cpu.clone();
-            cpu2.a = a;
-            cpu2.c = c;
-            cpu2.run();
-            println!("a={} c={} {:?}", a, c, cpu2);
-        });
-    });
-     */
+    println!("{:?}", cpu.program);
+    part2(&cpu);
+}
 
-    for a in 0..1000 {
-        let mut cpu2 = cpu.clone();
-        cpu2.a = a;
-        cpu2.run();
-        println!("{} {:?}", a, cpu2);
+#[derive(Debug)]
+struct Path {
+    pub a: u64,
+    pub i: usize,
+}
+
+fn part2(cpu: &CPU) {
+    let mut options: Vec<Path> = vec![Path { a: 0, i: 0 }];
+
+    'options: while let Some(p) = options.pop() {
+        // println!("p {:?} options {:?}", p, options);
+        for n in 0..256 {
+            let mut cpu2 = cpu.clone();
+            let a = p.a + (n << (3 * p.i));
+            let aa = a >> (3 * p.i);
+            cpu2.a = aa;
+            cpu2.run();
+            //println!("{} {:?}", a, cpu2);
+
+            if cpu2.program == cpu2.output {
+                println!("part 2: {}", a);
+                return;
+            }
+
+            let subprogram = &cpu2.program[(cpu2.program.len() - p.i - 1)..cpu2.program.len()];
+            // println!("subprog {:?}", subprogram);
+            if subprogram.len() > cpu2.output.len() {
+                continue;
+            }
+            let output = &cpu2.output[(cpu2.output.len() - subprogram.len())..];
+            // println!("output {:?}", output);
+            if output == subprogram {
+                println!("wooooo {:?} {} {:?}", subprogram, a, cpu2);
+                options.push(Path { a, i: p.i + 1 });
+            }
+        }
     }
 }
 
