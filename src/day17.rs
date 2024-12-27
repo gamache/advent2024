@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use rayon::prelude::*;
 use regex::Regex;
 
@@ -7,47 +9,59 @@ pub fn run(input: &str) {
     cpu1.run();
     println!("part 1: {}", cpu1.output_string());
 
-    println!("{:?}", cpu.program);
     part2(&cpu);
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Path {
     pub a: u64,
     pub i: usize,
 }
 
 fn part2(cpu: &CPU) {
-    let mut options: Vec<Path> = vec![Path { a: 0, i: 0 }];
+    let mut paths: Vec<Path> = vec![];
 
-    'options: while let Some(p) = options.pop() {
-        // println!("p {:?} options {:?}", p, options);
-        for n in 0..256 {
-            let mut cpu2 = cpu.clone();
-            let a = p.a + (n << (3 * p.i));
-            let aa = a >> (3 * p.i);
-            cpu2.a = aa;
-            cpu2.run();
-            //println!("{} {:?}", a, cpu2);
-
-            if cpu2.program == cpu2.output {
-                println!("part 2: {}", a);
-                return;
-            }
-
-            let subprogram = &cpu2.program[(cpu2.program.len() - p.i - 1)..cpu2.program.len()];
-            // println!("subprog {:?}", subprogram);
-            if subprogram.len() > cpu2.output.len() {
-                continue;
-            }
-            let output = &cpu2.output[(cpu2.output.len() - subprogram.len())..];
-            // println!("output {:?}", output);
-            if output == subprogram {
-                println!("wooooo {:?} {} {:?}", subprogram, a, cpu2);
-                options.push(Path { a, i: p.i + 1 });
-            }
+    for a in 1..1024 {
+        let mut cpu2 = cpu.clone();
+        cpu2.a = a;
+        cpu2.run();
+        if cpu2.output.last().unwrap() == cpu2.program.last().unwrap() {
+            paths.push(Path { a, i: 1 });
         }
     }
+
+    let mut solutions: Vec<u64> = paths
+        .par_iter()
+        .flat_map(|p| {
+            let mut ps: Vec<Path> = vec![p.clone()];
+            let mut solutions: Vec<u64> = vec![];
+            while let Some(p) = ps.pop() {
+                for n in 0..8 {
+                    let mut cpu2 = cpu.clone();
+                    let a = (p.a << 3) + n;
+                    cpu2.a = a;
+                    cpu2.run();
+
+                    if cpu2.program == cpu2.output {
+                        solutions.push(a);
+                        continue;
+                    }
+                    if cpu2.output.len() > cpu2.program.len() {
+                        continue;
+                    }
+
+                    let output_tail = &cpu2.output[(cpu2.output.len() - p.i - 1)..];
+                    let program_tail = &cpu2.program[(cpu2.program.len() - output_tail.len())..];
+                    if output_tail == program_tail {
+                        ps.push(Path { a, i: p.i + 1 });
+                    }
+                }
+            }
+            solutions
+        })
+        .collect();
+    solutions.sort();
+    println!("part 2: {}", solutions[0]);
 }
 
 #[derive(Debug, Clone)]
@@ -143,51 +157,43 @@ impl CPU {
             0 => {
                 // adv
                 let v = self.fetch();
-                // println!("adv {}", (1 << self.combo(v)));
                 self.a = self.a / (1 << self.combo(v));
             }
             1 => {
                 // bxl
                 let v = self.fetch();
-                // println!("bxl {}", v);
                 self.b = self.b ^ v;
             }
             2 => {
                 // bst
                 let v = self.fetch();
-                // println!("bst {}", self.combo(v) % 8);
                 self.b = self.combo(v) % 8;
             }
             3 => {
                 // jnz
                 let v = self.fetch();
-                // println!("jnz {}", v);
                 if self.a != 0 {
                     self.ip = v as usize;
                 }
             }
             4 => {
                 // bxc
-                let v = self.fetch();
-                // println!("bxc {}", v);
+                let _v = self.fetch();
                 self.b = self.b ^ self.c;
             }
             5 => {
                 // out
                 let v = self.fetch();
-                // println!("out {}", self.combo(v) % 8);
                 self.output.push(self.combo(v) % 8);
             }
             6 => {
                 // bdv
                 let v = self.fetch();
-                // println!("bdv {}", (1 << self.combo(v)));
                 self.b = self.a / (1 << self.combo(v));
             }
             7 => {
                 // cdv
                 let v = self.fetch();
-                // println!("cdv {}", (1 << self.combo(v)));
                 self.c = self.a / (1 << self.combo(v));
             }
             x => panic!("bad opcode {}", x),
